@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: elasticsearch
-          image: docker.elastic.co/elasticsearch:7.17.0
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
           env:
             - name: discovery.type
               value: single-node
@@ -36,19 +36,19 @@ spec:
               value: "-Xms512m -Xmx512m"
           ports:
             - containerPort: 9200
-          volumeMonts:
-            - mountsPath: /var/share/elasticsearch/data
+          volumeMounts:
+            - mountPath: /usr/share/elasticsearch/data
               name: elasticsearch-storage
       volumes:
         - name: elasticsearch-storage
-          persistenceVolumeClaim:
+          persistentVolumeClaim:
             claimName: elasticsearch-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: elasticsearch
-  namepsace: logging
+  namespace: logging
 spec:
   selector:
     app: elasticsearch
