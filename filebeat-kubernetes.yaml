@@ -7,7 +7,7 @@ metadata:
   labels:
     k8s-app: filebeat
 data:
-  filebeat.yml: | -
+  filebeat.yml: |-
     filebeat.inputs:
     - type: container
       paths:
@@ -16,9 +16,20 @@ data:
         - add_kubernetes_metadata:
             host: ${NODE_NAME}
             matchers:
-            - logs_path
+            - logs_path:
                 logs_path: "/var/log/containers/"
-    
+
+    # To enable hints based autodiscover, remove `filebeat.inputs` configuration and uncomment this:
+    #filebeat.autodiscover:
+    #  providers:
+    #    - type: kubernetes
+    #      node: ${NODE_NAME}
+    #      hints.enabled: true
+    #      hints.default_config:
+    #        type: container
+    #        paths:
+    #          - /var/log/containers/*${data.kubernetes.container.id}.log
+
     processors:
       - add_cloud_metadata:
       - add_host_metadata:
@@ -54,7 +65,7 @@ spec:
         image: docker.elastic.co/beats/filebeat:7.17.28
         args: [
           "-c", "/etc/filebeat.yml",
-          "-e"
+          "-e",
         ]
         env:
         - name: ELASTICSEARCH_HOST
@@ -62,6 +73,8 @@ spec:
         - name: ELASTICSEARCH_PORT
           value: "9200"
         - name: ELASTICSEARCH_USERNAME
+          value: elastic
+        - name: ELASTICSEARCH_PASSWORD
           value: changeme
         - name: ELASTIC_CLOUD_ID
           value:
@@ -73,25 +86,27 @@ spec:
               fieldPath: spec.nodeName
         securityContext:
           runAsUser: 0
+          # If using Red Hat OpenShift uncomment this:
+          #privileged: true
         resources:
           limits:
             memory: 200Mi
           requests:
             cpu: 100m
             memory: 100Mi
-          volumeMounts:
-          - name: config
-            mountPath: /etc/filebeat.yml
-            readOnly: true
-            subPath: filebeat.yml
-          - name: data
-            mountPath: /usr/share/filebeat/data
-          - name: varlibdockercontainers
-            mountPath: /var/lib/docker/containers
-            readOnly: true
-          - name: varlog
-            mountPath: /var/log
-            readOnly: true
+        volumeMounts:
+        - name: config
+          mountPath: /etc/filebeat.yml
+          readOnly: true
+          subPath: filebeat.yml
+        - name: data
+          mountPath: /usr/share/filebeat/data
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
       volumes:
       - name: config
         configMap:
@@ -103,10 +118,10 @@ spec:
       - name: varlog
         hostPath:
           path: /var/log
-        # data folder stores a registry of read status for all files, so we don't send everything again on a filebeat pod restart
+      # data folder stores a registry of read status for all files, so we don't send everything again on a Filebeat pod restart
       - name: data
         hostPath:
-          # when filebeat runs as non-root user, this directory need to be writable by group (g+w)
+          # When filebeat runs as non-root user, this directory needs to be writable by group (g+w).
           path: /var/lib/filebeat-data
           type: DirectoryOrCreate
 ---
@@ -118,9 +133,37 @@ subjects:
 - kind: ServiceAccount
   name: filebeat
   namespace: logging
-roleRef: 
+roleRef:
   kind: ClusterRole
   name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: filebeat
+  namespace: logging
+subjects:
+  - kind: ServiceAccount
+    name: filebeat
+    namespace: logging
+roleRef:
+  kind: Role
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: filebeat-kubeadm-config
+  namespace: logging
+subjects:
+  - kind: ServiceAccount
+    name: filebeat
+    namespace: logging
+roleRef:
+  kind: Role
+  name: filebeat-kubeadm-config
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -130,7 +173,7 @@ metadata:
   labels:
     k8s-app: filebeat
 rules:
-- apiGroup: [""] # "" indicates the core API group
+- apiGroups: [""] # "" indicates the core API group
   resources:
   - namespaces
   - pods
@@ -139,7 +182,7 @@ rules:
   - get
   - watch
   - list
-- apiGroup: ["app"]
+- apiGroups: ["apps"]
   resources:
     - replicasets
   verbs: ["get", "list", "watch"]
@@ -162,12 +205,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: filebeat-kubedm-config
+  name: filebeat-kubeadm-config
   namespace: logging
   labels:
     k8s-app: filebeat
 rules:
-  - apiGroup: [""]
+  - apiGroups: [""]
     resources:
       - configmaps
     resourceNames:
