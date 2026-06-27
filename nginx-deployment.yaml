@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: nginx
   namespace: demo-app
-spec: 
+spec:
   replicas: 1
   selector:
     matchLabels:
@@ -29,7 +29,7 @@ spec:
   selector:
     app: nginx
   ports:
-    - protocols: TCP
+    - protocol: TCP
       port: 80
       targetPort: 80
       nodePort: 30080
