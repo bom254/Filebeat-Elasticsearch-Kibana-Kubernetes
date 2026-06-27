@@ -70,6 +70,7 @@ kubectl get pods -n logging
 ```sh
 minikube service kibana -n logging --url
 ```
+![](images/2026-06-26_15-08.png)
  
 ## Deploy Filebeat as a DaemonSet
 ### Download Filebeat Kubernetes Manifest from Elastic
