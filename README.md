@@ -87,7 +87,7 @@ curl -L -O https://raw.githubusercontent.com/elastic/beats/7.17/deploy/kubernete
 ```sh
 kubectl apply -f filebeat-kubernetes-updated.yaml
 ```
-
+![](images/2026-06-26_15-17.png)
 ### On Kibana
 1. Explore on My Own
 2. Click Home Left Panel
@@ -96,6 +96,8 @@ kubectl apply -f filebeat-kubernetes-updated.yaml
 5. Select @timestamp in Timestamp field
 6. Click create index pattern.
 7. Go to Discover on the left panel of homepage to see logs from app1 and app2.
+![](images/2026-06-26_19-39.png)
+![](images/2026-06-26_19-41.png)
 
 
 ### Verify the Logs from the apps
@@ -106,10 +108,12 @@ kubectl logs app1 -n demo-apps | tail
 kubectl logs app2 -n demo-apps | head
 ```
 
+
 ### Verify it from Kibana UI
 1. On the left panel (under Available fields)
 2. Scroll down to the bottom to see e.g. log message, log.file.path, etc. 
 3. Click to examine them.
+![](images/2026-06-26_19-45.png)
 
 
 ## Now, Deploy and Log an NGINX application
@@ -125,7 +129,8 @@ minikube service nginx-service -n demo-apps --url
 ### Create some Filters in Kibana to examine Nginx logs
 1. Add filter
 2. Field = kubernetes.labels.app, Operator = is, Value = nginx & Save. (You may have to change timestamp next to the "Refresh button" to see some logs)
-
+![](images/2026-06-26_19-54.png)
+![](images/2026-06-26_19-55.png)
 
 
 ## Clean UP
